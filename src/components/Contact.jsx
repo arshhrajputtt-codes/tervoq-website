@@ -13,12 +13,41 @@ const SERVICE_OPTIONS = [
   'Not sure yet',
 ]
 
+// Get a free access key at https://web3forms.com (no signup wall — just
+// enter the email you want submissions sent to) and paste it below.
+const WEB3FORMS_ACCESS_KEY = '83713abf-c0cb-4369-8f21-a250afd58a8d'
+
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setSubmitted(true)
+    setError('')
+    setSubmitting(true)
+
+    const formData = new FormData(e.target)
+    formData.append('access_key', WEB3FORMS_ACCESS_KEY)
+    formData.append('subject', 'New project inquiry — TERVOQ website')
+    formData.append('from_name', 'TERVOQ Website')
+
+    try {
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        body: formData,
+      })
+      const result = await res.json()
+      if (result.success) {
+        setSubmitted(true)
+      } else {
+        setError('Something went wrong sending your message. Please try again or email hello@tervoq.tech directly.')
+      }
+    } catch {
+      setError('Something went wrong sending your message. Please try again or email hello@tervoq.tech directly.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -85,12 +114,16 @@ export default function Contact() {
                   className="w-full resize-none rounded-lg border border-line bg-white/[0.02] px-4 py-3 text-sm text-ivory outline-none transition-colors placeholder:text-mist/60 focus:border-blue-soft"
                 />
               </div>
+              {error && (
+                <p className="text-sm text-red-400">{error}</p>
+              )}
               <button
                 type="submit"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ivory px-6 py-3.5 text-sm font-semibold text-ink transition-transform hover:scale-[1.02]"
+                disabled={submitting}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ivory px-6 py-3.5 text-sm font-semibold text-ink transition-transform hover:scale-[1.02] disabled:opacity-60 disabled:hover:scale-100"
               >
-                Start A Project
-                <ArrowUpRight size={16} strokeWidth={2.5} />
+                {submitting ? 'Sending...' : 'Start A Project'}
+                {!submitting && <ArrowUpRight size={16} strokeWidth={2.5} />}
               </button>
             </form>
           )}
